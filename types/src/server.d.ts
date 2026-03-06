@@ -30,6 +30,7 @@ export class WdkMcpServer extends McpServer {
      *
      * @param {string} name - The server name.
      * @param {string} version - The server version.
+     * @param {ServerOptions} [options] - Server options including MCP client capabilities.
      */
     constructor(name: string, version: string, options?: ServerOptions);
     /**
@@ -270,6 +271,18 @@ export type WdkConfig = {
      */
     seed?: string;
 };
+export type Capabilities = {
+    /**
+     * - Whether the MCP client supports elicitation (default: true).
+     */
+    elicitation?: boolean;
+};
+export type ServerOptions = {
+    /**
+     * - MCP client capabilities.
+     */
+    capabilities?: Capabilities;
+};
 export type ProtocolRegistry = {
     /**
      * - Chain to labels mapping for swap protocols.
@@ -302,18 +315,6 @@ export type ConfirmationResult = {
     content?: {
         confirmed?: boolean;
     };
-};
-export type Capabilities = {
-    /**
-     * - Whether the MCP client supports elicitation (default: true).
-     */
-    elicitation?: boolean;
-};
-export type ServerOptions = {
-    /**
-     * - MCP client capabilities.
-     */
-    capabilities?: Capabilities;
 };
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import WDK from '@tetherto/wdk';
