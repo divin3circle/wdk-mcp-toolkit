@@ -280,8 +280,18 @@ describe('swap', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('SWAP CONFIRMATION REQUIRED'),
-          expect.any(Object)
+          `⚠️  SWAP CONFIRMATION REQUIRED\n\nProtocol: velora\nSell: 100 USDT\nBuy: 99.85 USDC\nEstimated Fee: 21000000000000\n\n\nThis swap is IRREVERSIBLE once broadcast to the ethereum network.\n\nDo you want to proceed with this swap?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Swap',
+                description: 'Check to confirm and execute swap'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 

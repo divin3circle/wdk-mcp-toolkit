@@ -76,7 +76,7 @@ describe('transfer', () => {
         })
 
         expect(result.isError).toBe(true)
-        expect(result.content[0].text).toContain('Token "UNKNOWN" not registered for ethereum')
+        expect(result.content[0].text).toBe('Error transferring token on ethereum: Token "UNKNOWN" not registered for ethereum. Available tokens: USDT, USDC')
       })
 
       test('should include available tokens in error message', async () => {
@@ -89,7 +89,7 @@ describe('transfer', () => {
           amount: '100'
         })
 
-        expect(result.content[0].text).toContain('Available tokens: USDT, USDC')
+        expect(result.content[0].text).toBe('Error transferring token on ethereum: Token "UNKNOWN" not registered for ethereum. Available tokens: USDT, USDC')
       })
     })
 
@@ -105,7 +105,7 @@ describe('transfer', () => {
         })
 
         expect(result.isError).toBe(true)
-        expect(result.content[0].text).toContain('Invalid amount format')
+        expect(result.content[0].text).toBe('Error transferring token on ethereum: Invalid amount format: "abc". Expected a positive number (e.g., "100", "2.50", "1,000.00").')
       })
 
       test('should throw if amount is zero', async () => {
@@ -119,7 +119,7 @@ describe('transfer', () => {
         })
 
         expect(result.isError).toBe(true)
-        expect(result.content[0].text).toContain('Amount must be greater than zero')
+        expect(result.content[0].text).toBe('Error transferring token on ethereum: Amount must be greater than zero')
       })
 
       test('should throw if amount is negative', async () => {
@@ -133,7 +133,7 @@ describe('transfer', () => {
         })
 
         expect(result.isError).toBe(true)
-        expect(result.content[0].text).toContain('Negative amounts are not allowed')
+        expect(result.content[0].text).toBe('Error transferring token on ethereum: Negative amounts are not allowed: "-10".')
       })
     })
 
@@ -211,8 +211,18 @@ describe('transfer', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('TOKEN TRANSFER CONFIRMATION REQUIRED'),
-          expect.any(Object)
+          '⚠️  TOKEN TRANSFER CONFIRMATION REQUIRED\n\nToken: USDT\nTo: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb7\nAmount: 100 USDT (100000000 base units)\nEstimated Fee: 21000000000000\n\nThis transfer is IRREVERSIBLE once broadcast to the ethereum network.\n\nDo you want to proceed with this transfer?',
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Transfer',
+                description: 'Check to confirm and send transfer'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 

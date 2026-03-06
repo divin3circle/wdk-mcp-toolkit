@@ -216,8 +216,18 @@ describe('borrow', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('BORROW CONFIRMATION'),
-          expect.any(Object)
+          `⚠️  BORROW CONFIRMATION REQUIRED\n\nProtocol: aave\nChain: ethereum\nToken: USDT\nAmount: 100\nBorrower: 0x123\nEstimated Fee: 21000000000000\n\n⚠️ WARNING: This creates DEBT that accrues interest. Monitor your health factor to avoid liquidation.\n\nThis transaction is IRREVERSIBLE once broadcast.\n\nDo you want to proceed with this borrow?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Borrow',
+                description: 'Check to confirm and execute borrow'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 

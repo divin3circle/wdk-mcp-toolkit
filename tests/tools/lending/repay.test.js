@@ -216,8 +216,18 @@ describe('repay', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('REPAY CONFIRMATION'),
-          expect.any(Object)
+          `⚠️  REPAY CONFIRMATION REQUIRED\n\nProtocol: aave\nChain: ethereum\nToken: USDT\nAmount: 100\nRepaying for: 0x123\nEstimated Fee: 21000000000000\n\nThis will reduce your debt and improve your health factor. This transaction is IRREVERSIBLE once broadcast.\n\nDo you want to proceed with this repayment?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Repay',
+                description: 'Check to confirm and execute repayment'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 

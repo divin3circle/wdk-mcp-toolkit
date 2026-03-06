@@ -246,8 +246,18 @@ describe('withdraw', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('WITHDRAW CONFIRMATION'),
-          expect.any(Object)
+          `⚠️  WITHDRAW CONFIRMATION REQUIRED\n\nProtocol: aave\nChain: ethereum\nToken: USDT\nAmount: 100\nRecipient: 0x123\nEstimated Fee: 21000000000000\n\nYour aTokens will be burned in exchange for the underlying tokens. This transaction is IRREVERSIBLE once broadcast.\n\nDo you want to proceed with this withdrawal?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Withdraw',
+                description: 'Check to confirm and execute withdrawal'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 

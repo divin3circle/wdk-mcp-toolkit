@@ -59,7 +59,7 @@ describe('sendTransaction', () => {
         })
 
         expect(result.isError).toBe(true)
-        expect(result.content[0].text).toContain('Amount must be greater than zero')
+        expect(result.content[0].text).toBe('Error sending transaction on bitcoin: Amount must be greater than zero')
         expect(result.structuredContent).toBeUndefined()
       })
 
@@ -71,7 +71,7 @@ describe('sendTransaction', () => {
         })
 
         expect(result.isError).toBe(true)
-        expect(result.content[0].text).toContain('Amount must be greater than zero')
+        expect(result.content[0].text).toBe('Error sending transaction on bitcoin: Amount must be greater than zero')
         expect(result.structuredContent).toBeUndefined()
       })
     })
@@ -131,11 +131,19 @@ describe('sendTransaction', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('TRANSACTION CONFIRMATION'),
-          expect.any(Object)
+          '⚠️  TRANSACTION CONFIRMATION REQUIRED\n\nTo: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\nAmount: 100000\nEstimated Fee: 5000\nTotal: 105000\n\nThis transaction is IRREVERSIBLE once broadcast to the bitcoin network.\n\nDo you want to proceed with this transaction?',
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Transaction',
+                description: 'Check to confirm and send transaction'
+              }
+            },
+            required: ['confirmed']
+          }
         )
-        expect(server.requestConfirmation.mock.calls[0][0]).toContain('100000')
-        expect(server.requestConfirmation.mock.calls[0][0]).toContain('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh')
       })
 
       test('should return cancelled message if user declines', async () => {

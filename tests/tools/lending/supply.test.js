@@ -104,8 +104,18 @@ describe('supply', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('SUPPLY CONFIRMATION REQUIRED'),
-          expect.any(Object)
+          `⚠️  SUPPLY CONFIRMATION REQUIRED\n\nProtocol: aave\nChain: ethereum\nToken: USDT\nAmount: 100\nRecipient (aTokens): ${WALLET_ADDRESS}\nEstimated Fee: 21000000000000\n\nYou will receive aTokens representing your deposit. This transaction is IRREVERSIBLE once broadcast.\n\nDo you want to proceed with this supply?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Supply',
+                description: 'Check to confirm and execute supply'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 

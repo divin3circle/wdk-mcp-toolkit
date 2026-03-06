@@ -108,8 +108,18 @@ describe('bridge', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('BRIDGE CONFIRMATION REQUIRED'),
-          expect.any(Object)
+          `⚠️  BRIDGE CONFIRMATION REQUIRED\n\nProtocol: usdt0\nFrom: ethereum\nTo: arbitrum\nToken: USDT\nAmount: 100\nRecipient: ${WALLET_ADDRESS}\nGas Fee: 21000000000000\nBridge Fee: 500000000000000\nTotal Fee: 521000000000000\n\nThis bridge is IRREVERSIBLE once broadcast. Tokens will arrive on arbitrum after confirmation (may take minutes to hours).\n\nDo you want to proceed with this bridge?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Bridge',
+                description: 'Check to confirm and execute bridge'
+              }
+            },
+            required: ['confirmed']
+          }
         )
       })
 
