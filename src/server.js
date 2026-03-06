@@ -256,7 +256,7 @@ export class WdkMcpServer extends McpServer {
    * If elicitation is disabled, auto-confirms the operation.
    *
    * @param {string} message - The confirmation message to display.
-   * @param {object} schema - The JSON Schema for the confirmation form.
+   * @param {Object} schema - The JSON Schema for the confirmation form.
    * @returns {Promise<ConfirmationResult>} The confirmation result.
    */
   async requestConfirmation (message, schema) {
