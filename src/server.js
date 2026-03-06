@@ -58,6 +58,12 @@ import { WdkIndexerClient } from '@tetherto/wdk-indexer-http'
 /** @typedef {(server: WdkMcpServer) => void} ToolFunction */
 
 /**
+ * @typedef {Object} ConfirmationResult
+ * @property {string} action - The confirmation action (e.g., "accept", "decline").
+ * @property {{confirmed?: boolean}} [content] - The confirmation content.
+ */
+
+/**
  * Supported blockchain identifiers.
  *
  * @readonly
@@ -251,7 +257,7 @@ export class WdkMcpServer extends McpServer {
    *
    * @param {string} message - The confirmation message to display.
    * @param {object} schema - The JSON Schema for the confirmation form.
-   * @returns {Promise<{action: string, content?: {confirmed?: boolean}}>} The confirmation result.
+   * @returns {Promise<ConfirmationResult>} The confirmation result.
    */
   async requestConfirmation (message, schema) {
     if (!this._capabilities.elicitation) {

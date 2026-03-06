@@ -112,15 +112,10 @@ export class WdkMcpServer extends McpServer {
      * If elicitation is disabled, auto-confirms the operation.
      *
      * @param {string} message - The confirmation message to display.
-     * @param {object} schema - The JSON Schema for the confirmation form.
-     * @returns {Promise<{action: string, content?: {confirmed?: boolean}}>} The confirmation result.
+     * @param {Object} schema - The JSON Schema for the confirmation form.
+     * @returns {Promise<ConfirmationResult>} The confirmation result.
      */
-    requestConfirmation(message: string, schema: object): Promise<{
-        action: string;
-        content?: {
-            confirmed?: boolean;
-        };
-    }>;
+    requestConfirmation(message: string, schema: object): Promise<ConfirmationResult>;
     /**
      * Enables WDK and initializes the wallet development kit.
      *
@@ -296,6 +291,18 @@ export type ProtocolRegistry = {
 export type TokenMap = Map<string, TokenInfo>;
 export type TokenRegistry = Map<string, TokenMap>;
 export type ToolFunction = (server: WdkMcpServer) => void;
+export type ConfirmationResult = {
+    /**
+     * - The confirmation action (e.g., "accept", "decline").
+     */
+    action: string;
+    /**
+     * - The confirmation content.
+     */
+    content?: {
+        confirmed?: boolean;
+    };
+};
 export type Capabilities = {
     /**
      * - Whether the MCP client supports elicitation (default: true).
