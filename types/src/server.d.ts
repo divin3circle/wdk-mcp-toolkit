@@ -298,7 +298,7 @@ export type TokenRegistry = Map<string, TokenMap>;
 export type ToolFunction = (server: WdkMcpServer) => void;
 export type Capabilities = {
     /**
-     * - Whether the MCP client supports elicitation. Defaults to true.
+     * - Whether the MCP client supports elicitation (default: true).
      */
     elicitation?: boolean;
 };

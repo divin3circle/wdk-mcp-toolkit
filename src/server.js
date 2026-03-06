@@ -35,7 +35,7 @@ import { WdkIndexerClient } from '@tetherto/wdk-indexer-http'
 
 /**
  * @typedef {Object} Capabilities
- * @property {boolean} [elicitation] - Whether the MCP client supports elicitation. Defaults to true.
+ * @property {boolean} [elicitation] - Whether the MCP client supports elicitation (default: true).
  */
 
 /**
