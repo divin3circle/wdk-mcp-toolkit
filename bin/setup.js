@@ -11,553 +11,693 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-'use strict'
+"use strict";
 
-import { password, input, confirm, checkbox } from '@inquirer/prompts'
-import pc from 'picocolors'
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
-import os from 'node:os'
-import { exec as execCallback } from 'node:child_process'
-import { promisify } from 'node:util'
+import { password, input, confirm, checkbox } from "@inquirer/prompts";
+import pc from "picocolors";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { exec as execCallback } from "node:child_process";
+import { promisify } from "node:util";
 
-const exec = promisify(execCallback)
+const exec = promisify(execCallback);
 
 const DEPENDENCIES = [
   {
-    name: '@tetherto/wdk-wallet-btc',
-    description: 'Bitcoin wallet support',
-    capabilities: ['Interact with Bitcoin blockchain']
+    name: "@tetherto/wdk-wallet-btc",
+    description: "Bitcoin wallet support",
+    capabilities: ["Interact with Bitcoin blockchain"],
   },
   {
-    name: '@tetherto/wdk-wallet-evm',
-    description: 'Ethereum & EVM-compatible chains support',
-    capabilities: ['Interact with EVM blockchains']
+    name: "@tetherto/wdk-wallet-evm",
+    description: "Ethereum & EVM-compatible chains support",
+    capabilities: ["Interact with EVM blockchains"],
   },
   {
-    name: '@tetherto/wdk-protocol-swap-velora-evm',
-    description: 'Token swap protocol (Velora)',
-    capabilities: ['Swap tokens on EVM chains']
+    name: "@tetherto/wdk-protocol-swap-velora-evm",
+    description: "Token swap protocol (Velora)",
+    capabilities: ["Swap tokens on EVM chains"],
   },
   {
-    name: '@tetherto/wdk-protocol-bridge-usdt0-evm',
-    description: 'Cross-chain bridge protocol (USDT0)',
-    capabilities: ['Bridge USDT across chains']
+    name: "@tetherto/wdk-protocol-bridge-usdt0-evm",
+    description: "Cross-chain bridge protocol (USDT0)",
+    capabilities: ["Bridge USDT across chains"],
   },
   {
-    name: '@tetherto/wdk-protocol-lending-aave-evm',
-    description: 'DeFi lending protocol (Aave)',
-    capabilities: ['Supply assets to earn yield', 'Borrow against collateral']
+    name: "@tetherto/wdk-protocol-lending-aave-evm",
+    description: "DeFi lending protocol (Aave)",
+    capabilities: ["Supply assets to earn yield", "Borrow against collateral"],
   },
   {
-    name: '@tetherto/wdk-protocol-fiat-moonpay',
-    description: 'Fiat on/off-ramp (MoonPay)',
-    capabilities: ['Buy crypto with fiat (USD, EUR, etc.)', 'Sell crypto for fiat']
-  }
-]
+    name: "@tetherto/wdk-protocol-fiat-moonpay",
+    description: "Fiat on/off-ramp (MoonPay)",
+    capabilities: [
+      "Buy crypto with fiat (USD, EUR, etc.)",
+      "Sell crypto for fiat",
+    ],
+  },
+];
 
-async function checkVsCodeInstalled () {
+async function checkVsCodeInstalled() {
   try {
-    await exec('code --version')
-    return true
+    await exec("code --version");
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
-async function runSetupWizard () {
-  printBanner()
+async function runSetupWizard() {
+  printBanner();
 
-  const vsCodeInstalled = await checkVsCodeInstalled()
+  const vsCodeInstalled = await checkVsCodeInstalled();
   if (!vsCodeInstalled) {
-    console.log(pc.red(pc.bold('Error: Visual Studio Code is not installed or not in PATH')))
-    console.log()
-    console.log('This setup wizard requires VS Code to be installed.')
-    console.log()
-    console.log('Please install VS Code from: ' + pc.underline('https://code.visualstudio.com/'))
-    console.log()
-    console.log(pc.dim('After installing, make sure the "code" command is available in your terminal.'))
-    console.log(pc.dim('On macOS, open VS Code and run: Shell Command: Install \'code\' command in PATH'))
-    console.log()
-    process.exit(1)
+    console.log(
+      pc.red(
+        pc.bold("Error: Visual Studio Code is not installed or not in PATH"),
+      ),
+    );
+    console.log();
+    console.log("This setup wizard requires VS Code to be installed.");
+    console.log();
+    console.log(
+      "Please install VS Code from: " +
+        pc.underline("https://code.visualstudio.com/"),
+    );
+    console.log();
+    console.log(
+      pc.dim(
+        'After installing, make sure the "code" command is available in your terminal.',
+      ),
+    );
+    console.log(
+      pc.dim(
+        "On macOS, open VS Code and run: Shell Command: Install 'code' command in PATH",
+      ),
+    );
+    console.log();
+    process.exit(1);
   }
 
-  await checkGitignore()
+  await checkGitignore();
 
-  const config = {}
+  const config = {};
 
-  config.seed = await collectSeedPhrase()
+  config.seed = await collectSeedPhrase();
 
-  config.indexerApiKey = await collectIndexerApiKey()
+  config.indexerApiKey = await collectIndexerApiKey();
 
-  const moonpay = await collectMoonPayCredentials()
-  config.moonPayApiKey = moonpay.apiKey
-  config.moonPaySecretKey = moonpay.secretKey
+  const moonpay = await collectMoonPayCredentials();
+  config.moonPayApiKey = moonpay.apiKey;
+  config.moonPaySecretKey = moonpay.secretKey;
 
-  await selectAndInstallDependencies()
+  await selectAndInstallDependencies();
 
-  await generateConfig(config)
+  await generateConfig(config);
 
-  await openVsCode()
+  await openVsCode();
 
-  printSuccessMessage(config)
+  printSuccessMessage(config);
 }
 
-async function runOpenClawSetupWizard () {
-  printOpenClawBanner()
+async function runOpenClawSetupWizard() {
+  printOpenClawBanner();
 
-  const config = {}
+  const config = {};
 
-  config.seed = await collectSeedPhrase()
-  config.walletEncryptionKey = await collectWalletEncryptionKey()
-  config.allowAgentMutations = await collectAgentMutationConsent()
-  config.indexerApiKey = await collectIndexerApiKey()
+  config.seed = await collectSeedPhrase();
+  config.walletEncryptionKey = await collectWalletEncryptionKey();
+  config.allowAgentMutations = await collectAgentMutationConsent();
+  config.indexerApiKey = await collectIndexerApiKey();
 
-  const moonpay = await collectMoonPayCredentials()
-  config.moonPayApiKey = moonpay.apiKey
-  config.moonPaySecretKey = moonpay.secretKey
+  const moonpay = await collectMoonPayCredentials();
+  config.moonPayApiKey = moonpay.apiKey;
+  config.moonPaySecretKey = moonpay.secretKey;
 
-  await selectAndInstallDependencies()
+  await selectAndInstallDependencies();
 
-  const output = await generateOpenClawConfigSnippet(config)
+  const output = await generateOpenClawConfigSnippet(config);
 
-  printOpenClawSuccessMessage(config, output)
+  printOpenClawSuccessMessage(config, output);
 }
 
-function printBanner () {
-  console.log()
-  console.log(pc.cyan(pc.bold('╔══════════════════════════════════════════════════════════╗')))
-  console.log(pc.cyan(pc.bold('║           WDK MCP Toolkit Setup Wizard                   ║')))
-  console.log(pc.cyan(pc.bold('╚══════════════════════════════════════════════════════════╝')))
-  console.log()
-  console.log('This wizard configures the WDK MCP server for VS Code GitHub Copilot.')
-  console.log()
+function printBanner() {
+  console.log();
+  console.log(
+    pc.cyan(
+      pc.bold("╔══════════════════════════════════════════════════════════╗"),
+    ),
+  );
+  console.log(
+    pc.cyan(
+      pc.bold("║           WDK MCP Toolkit Setup Wizard                   ║"),
+    ),
+  );
+  console.log(
+    pc.cyan(
+      pc.bold("╚══════════════════════════════════════════════════════════╝"),
+    ),
+  );
+  console.log();
+  console.log(
+    "This wizard configures the WDK MCP server for VS Code GitHub Copilot.",
+  );
+  console.log();
 }
 
-function printOpenClawBanner () {
-  console.log()
-  console.log(pc.cyan(pc.bold('╔══════════════════════════════════════════════════════════╗')))
-  console.log(pc.cyan(pc.bold('║         WDK MCP Toolkit OpenClaw Setup Wizard            ║')))
-  console.log(pc.cyan(pc.bold('╚══════════════════════════════════════════════════════════╝')))
-  console.log()
-  console.log('This wizard generates an OpenClaw MCP config snippet for Argo autonomous mode.')
-  console.log()
+function printOpenClawBanner() {
+  console.log();
+  console.log(
+    pc.cyan(
+      pc.bold("╔══════════════════════════════════════════════════════════╗"),
+    ),
+  );
+  console.log(
+    pc.cyan(
+      pc.bold("║         WDK MCP Toolkit OpenClaw Setup Wizard            ║"),
+    ),
+  );
+  console.log(
+    pc.cyan(
+      pc.bold("╚══════════════════════════════════════════════════════════╝"),
+    ),
+  );
+  console.log();
+  console.log(
+    "This wizard generates an OpenClaw MCP config snippet for Argo autonomous mode.",
+  );
+  console.log();
 }
 
-async function checkGitignore () {
-  const gitignorePath = path.join(process.cwd(), '.gitignore')
+async function checkGitignore() {
+  const gitignorePath = path.join(process.cwd(), ".gitignore");
   try {
-    const content = await fs.readFile(gitignorePath, 'utf-8')
-    if (!content.includes('.vscode')) {
-      console.log(pc.yellow('Note: .vscode is not in .gitignore'))
-      console.log(pc.yellow('The generated config will contain sensitive data.\n'))
+    const content = await fs.readFile(gitignorePath, "utf-8");
+    if (!content.includes(".vscode")) {
+      console.log(pc.yellow("Note: .vscode is not in .gitignore"));
+      console.log(
+        pc.yellow("The generated config will contain sensitive data.\n"),
+      );
 
       const proceed = await confirm({
-        message: 'Add .vscode to .gitignore?',
-        default: true
-      })
+        message: "Add .vscode to .gitignore?",
+        default: true,
+      });
 
       if (proceed) {
-        await fs.appendFile(gitignorePath, '\n.vscode\n')
-        console.log(pc.green('Added .vscode to .gitignore\n'))
+        await fs.appendFile(gitignorePath, "\n.vscode\n");
+        console.log(pc.green("Added .vscode to .gitignore\n"));
       }
     }
   } catch {
-    await fs.writeFile(gitignorePath, '.vscode\n')
-    console.log(pc.green('Created .gitignore with .vscode entry\n'))
+    await fs.writeFile(gitignorePath, ".vscode\n");
+    console.log(pc.green("Created .gitignore with .vscode entry\n"));
   }
 }
 
-async function collectSeedPhrase () {
-  console.log(pc.yellow(pc.bold('SEED PHRASE (Required)')))
-  console.log(pc.dim('──────────────────────────────────────────────────────────'))
-  console.log()
-  console.log(pc.yellow('SECURITY NOTICE:'))
-  console.log(pc.yellow('   - Your seed phrase controls your wallet funds'))
-  console.log(pc.yellow('   - It will be stored locally in .vscode/mcp.json (gitignored)'))
-  console.log(pc.yellow('   - We recommend using a dedicated development wallet'))
-  console.log(pc.yellow('   - Never use your main wallet seed phrase'))
-  console.log()
+async function collectSeedPhrase() {
+  console.log(pc.yellow(pc.bold("SEED PHRASE (Required)")));
+  console.log(
+    pc.dim("──────────────────────────────────────────────────────────"),
+  );
+  console.log();
+  console.log(pc.yellow("SECURITY NOTICE:"));
+  console.log(pc.yellow("   - Your seed phrase controls your wallet funds"));
+  console.log(
+    pc.yellow(
+      "   - It will be stored locally in .vscode/mcp.json (gitignored)",
+    ),
+  );
+  console.log(
+    pc.yellow("   - We recommend using a dedicated development wallet"),
+  );
+  console.log(pc.yellow("   - Never use your main wallet seed phrase"));
+  console.log();
 
   const seed = await password({
-    message: 'Enter your BIP-39 seed phrase (12 or 24 words):',
-    mask: '*',
+    message: "Enter your BIP-39 seed phrase (12 or 24 words):",
+    mask: "*",
     validate: (value) => {
-      if (!value || value.trim() === '') {
-        return 'Seed phrase is required for wallet operations'
+      if (!value || value.trim() === "") {
+        return "Seed phrase is required for wallet operations";
       }
-      const words = value.trim().split(/\s+/)
+      const words = value.trim().split(/\s+/);
       if (words.length !== 12 && words.length !== 24) {
-        return 'Seed phrase must be 12 or 24 words'
+        return "Seed phrase must be 12 or 24 words";
       }
-      return true
-    }
-  })
+      return true;
+    },
+  });
 
-  console.log()
-  return seed.trim()
+  console.log();
+  return seed.trim();
 }
 
-async function collectIndexerApiKey () {
-  console.log(pc.blue(pc.bold('WDK INDEXER API KEY (Optional)')))
-  console.log(pc.dim('──────────────────────────────────────────────────────────'))
-  console.log()
-  console.log('Enables transaction history and token transfer queries.')
-  console.log()
-  console.log(pc.cyan('Get your free API key at: ') + pc.underline('https://wdk-api.tether.io/register'))
-  console.log()
-  console.log(pc.dim('Press Enter to skip if you don\'t need transaction history.'))
-  console.log()
+async function collectIndexerApiKey() {
+  console.log(pc.blue(pc.bold("WDK INDEXER API KEY (Optional)")));
+  console.log(
+    pc.dim("──────────────────────────────────────────────────────────"),
+  );
+  console.log();
+  console.log("Enables transaction history and token transfer queries.");
+  console.log();
+  console.log(
+    pc.cyan("Get your free API key at: ") +
+      pc.underline("https://wdk-api.tether.io/register"),
+  );
+  console.log();
+  console.log(
+    pc.dim("Press Enter to skip if you don't need transaction history."),
+  );
+  console.log();
 
   const apiKey = await password({
-    message: 'WDK Indexer API key:',
-    mask: '*'
-  })
+    message: "WDK Indexer API key:",
+    mask: "*",
+  });
 
-  if (!apiKey || apiKey.trim() === '') {
-    console.log(pc.yellow('Skipping indexer - transaction history tools will be disabled'))
-    console.log()
-    return null
+  if (!apiKey || apiKey.trim() === "") {
+    console.log(
+      pc.yellow(
+        "Skipping indexer - transaction history tools will be disabled",
+      ),
+    );
+    console.log();
+    return null;
   }
 
-  console.log()
-  return apiKey.trim()
+  console.log();
+  return apiKey.trim();
 }
 
-async function collectWalletEncryptionKey () {
-  console.log(pc.yellow(pc.bold('WALLET ENCRYPTION KEY (Required for custody tools)')))
-  console.log(pc.dim('──────────────────────────────────────────────────────────'))
-  console.log()
-  console.log('Used to encrypt wallet secret material at rest in ~/.wallets/wallets.json.')
-  console.log(pc.dim('Use a long random value. Example: openssl rand -base64 32'))
-  console.log()
+async function collectWalletEncryptionKey() {
+  console.log(
+    pc.yellow(pc.bold("WALLET ENCRYPTION KEY (Required for custody tools)")),
+  );
+  console.log(
+    pc.dim("──────────────────────────────────────────────────────────"),
+  );
+  console.log();
+  console.log(
+    "Used to encrypt wallet secret material at rest in ~/.wallets/wallets.json.",
+  );
+  console.log(
+    pc.dim("Use a long random value. Example: openssl rand -base64 32"),
+  );
+  console.log();
 
   const key = await password({
-    message: 'WDK wallet encryption key:',
-    mask: '*',
+    message: "WDK wallet encryption key:",
+    mask: "*",
     validate: (value) => {
-      if (!value || value.trim() === '') {
-        return 'Encryption key is required'
+      if (!value || value.trim() === "") {
+        return "Encryption key is required";
       }
 
       if (value.trim().length < 16) {
-        return 'Encryption key should be at least 16 characters'
+        return "Encryption key should be at least 16 characters";
       }
 
-      return true
-    }
-  })
+      return true;
+    },
+  });
 
-  console.log()
-  return key.trim()
+  console.log();
+  return key.trim();
 }
 
-async function collectAgentMutationConsent () {
-  console.log(pc.yellow(pc.bold('AGENT MUTATIONS')))
-  console.log(pc.dim('──────────────────────────────────────────────────────────'))
-  console.log()
-  console.log('Enabling this sets WDK_ALLOW_AGENT_MUTATIONS=1 in the OpenClaw MCP server env.')
-  console.log('When enabled, agent-initiated custody and scheduler writes are allowed.')
-  console.log()
+async function collectAgentMutationConsent() {
+  console.log(pc.yellow(pc.bold("AGENT MUTATIONS")));
+  console.log(
+    pc.dim("──────────────────────────────────────────────────────────"),
+  );
+  console.log();
+  console.log(
+    "Enabling this sets WDK_ALLOW_AGENT_MUTATIONS=1 in the OpenClaw MCP server env.",
+  );
+  console.log(
+    "When enabled, agent-initiated custody and scheduler writes are allowed.",
+  );
+  console.log();
 
   const enabled = await confirm({
-    message: 'Enable agent-initiated wallet/scheduler mutations?',
-    default: true
-  })
+    message: "Enable agent-initiated wallet/scheduler mutations?",
+    default: true,
+  });
 
-  console.log()
-  return enabled
+  console.log();
+  return enabled;
 }
 
-async function collectMoonPayCredentials () {
-  console.log(pc.magenta(pc.bold('MOONPAY CREDENTIALS (Optional)')))
-  console.log(pc.dim('──────────────────────────────────────────────────────────'))
-  console.log()
-  console.log('Enables fiat on/off-ramp - buy and sell crypto with USD, EUR, etc.')
-  console.log()
-  console.log(pc.cyan('Get your API keys from: ') + pc.underline('https://dashboard.moonpay.com/'))
-  console.log()
-  console.log(pc.dim('Press Enter to skip if you don\'t need fiat capabilities.'))
-  console.log()
+async function collectMoonPayCredentials() {
+  console.log(pc.magenta(pc.bold("MOONPAY CREDENTIALS (Optional)")));
+  console.log(
+    pc.dim("──────────────────────────────────────────────────────────"),
+  );
+  console.log();
+  console.log(
+    "Enables fiat on/off-ramp - buy and sell crypto with USD, EUR, etc.",
+  );
+  console.log();
+  console.log(
+    pc.cyan("Get your API keys from: ") +
+      pc.underline("https://dashboard.moonpay.com/"),
+  );
+  console.log();
+  console.log(
+    pc.dim("Press Enter to skip if you don't need fiat capabilities."),
+  );
+  console.log();
 
   const apiKey = await input({
-    message: 'MoonPay API key:'
-  })
+    message: "MoonPay API key:",
+  });
 
-  if (!apiKey || apiKey.trim() === '') {
-    console.log(pc.yellow('Skipping MoonPay - fiat tools will be disabled'))
-    console.log()
-    return { apiKey: null, secretKey: null }
+  if (!apiKey || apiKey.trim() === "") {
+    console.log(pc.yellow("Skipping MoonPay - fiat tools will be disabled"));
+    console.log();
+    return { apiKey: null, secretKey: null };
   }
 
   const secretKey = await password({
-    message: 'MoonPay Secret key:',
-    mask: '*',
+    message: "MoonPay Secret key:",
+    mask: "*",
     validate: (value) => {
-      if (!value || value.trim() === '') {
-        return 'Secret key is required when API key is provided'
+      if (!value || value.trim() === "") {
+        return "Secret key is required when API key is provided";
       }
-      return true
-    }
-  })
+      return true;
+    },
+  });
 
-  console.log()
+  console.log();
   return {
     apiKey: apiKey.trim(),
-    secretKey: secretKey.trim()
-  }
+    secretKey: secretKey.trim(),
+  };
 }
 
-async function selectAndInstallDependencies () {
-  console.log(pc.green(pc.bold('DEPENDENCIES')))
-  console.log(pc.dim('──────────────────────────────────────────────────────────'))
-  console.log()
-  console.log('Select which wallet and protocol packages to install.')
-  console.log('Each package enables specific capabilities for the MCP server.')
-  console.log()
+async function selectAndInstallDependencies() {
+  console.log(pc.green(pc.bold("DEPENDENCIES")));
+  console.log(
+    pc.dim("──────────────────────────────────────────────────────────"),
+  );
+  console.log();
+  console.log("Select which wallet and protocol packages to install.");
+  console.log("Each package enables specific capabilities for the MCP server.");
+  console.log();
 
-  const choices = DEPENDENCIES.map(dep => ({
-    name: `${pc.bold(dep.name)}\n     ${pc.dim(dep.description)}\n     ${pc.cyan('Enables:')} ${dep.capabilities.join(', ')}`,
+  const choices = DEPENDENCIES.map((dep) => ({
+    name: `${pc.bold(dep.name)}\n     ${pc.dim(dep.description)}\n     ${pc.cyan("Enables:")} ${dep.capabilities.join(", ")}`,
     value: dep.name,
-    checked: true
-  }))
+    checked: true,
+  }));
 
   const selectedDeps = await checkbox({
-    message: 'Select dependencies to install:',
+    message: "Select dependencies to install:",
     choices,
-    pageSize: 10
-  })
+    pageSize: 10,
+  });
 
   if (selectedDeps.length === 0) {
-    console.log(pc.yellow('\nNo dependencies selected. Skipping installation.'))
-    console.log()
-    return
+    console.log(
+      pc.yellow("\nNo dependencies selected. Skipping installation."),
+    );
+    console.log();
+    return;
   }
 
-  console.log()
-  console.log(pc.cyan('Installing selected dependencies...'))
-  console.log()
+  console.log();
+  console.log(pc.cyan("Installing selected dependencies..."));
+  console.log();
 
   for (let i = 0; i < selectedDeps.length; i++) {
-    const dep = selectedDeps[i]
-    process.stdout.write(`  [${i + 1}/${selectedDeps.length}] ${dep}...`)
+    const dep = selectedDeps[i];
+    process.stdout.write(`  [${i + 1}/${selectedDeps.length}] ${dep}...`);
     try {
-      await exec(`npm install ${dep}`, { cwd: process.cwd() })
-      console.log(pc.green(' done'))
+      await exec(`npm install ${dep}`, { cwd: process.cwd() });
+      console.log(pc.green(" done"));
     } catch (error) {
-      console.log(pc.red(' failed'))
-      console.log(pc.red(`    Error: ${error.message}`))
+      console.log(pc.red(" failed"));
+      console.log(pc.red(`    Error: ${error.message}`));
     }
   }
 
-  console.log()
+  console.log();
 }
 
-async function generateConfig (config) {
-  process.stdout.write(pc.cyan('Generating .vscode/mcp.json...'))
+async function generateConfig(config) {
+  process.stdout.write(pc.cyan("Generating .vscode/mcp.json..."));
 
   const mcpConfig = {
     servers: {
       wdk: {
-        type: 'stdio',
-        command: 'node',
-        args: ['examples/basic/index.js'],
+        type: "stdio",
+        command: "node",
+        args: ["examples/basic/index.js"],
         env: {
-          WDK_SEED: config.seed
-        }
-      }
-    }
-  }
+          WDK_SEED: config.seed,
+        },
+      },
+    },
+  };
 
   if (config.indexerApiKey) {
-    mcpConfig.servers.wdk.env.WDK_INDEXER_API_KEY = config.indexerApiKey
+    mcpConfig.servers.wdk.env.WDK_INDEXER_API_KEY = config.indexerApiKey;
   }
 
   if (config.moonPayApiKey) {
-    mcpConfig.servers.wdk.env.MOONPAY_API_KEY = config.moonPayApiKey
-    mcpConfig.servers.wdk.env.MOONPAY_SECRET_KEY = config.moonPaySecretKey
+    mcpConfig.servers.wdk.env.MOONPAY_API_KEY = config.moonPayApiKey;
+    mcpConfig.servers.wdk.env.MOONPAY_SECRET_KEY = config.moonPaySecretKey;
   }
 
-  const vscodeDir = path.join(process.cwd(), '.vscode')
-  await fs.mkdir(vscodeDir, { recursive: true })
+  const vscodeDir = path.join(process.cwd(), ".vscode");
+  await fs.mkdir(vscodeDir, { recursive: true });
 
-  const configPath = path.join(vscodeDir, 'mcp.json')
-  await fs.writeFile(configPath, JSON.stringify(mcpConfig, null, 2) + '\n')
+  const configPath = path.join(vscodeDir, "mcp.json");
+  await fs.writeFile(configPath, JSON.stringify(mcpConfig, null, 2) + "\n");
 
-  if (process.platform !== 'win32') {
-    await fs.chmod(configPath, 0o600)
+  if (process.platform !== "win32") {
+    await fs.chmod(configPath, 0o600);
   }
 
-  console.log(pc.green(' done'))
+  console.log(pc.green(" done"));
 }
 
-async function openVsCode () {
-  console.log()
+async function openVsCode() {
+  console.log();
   const shouldOpen = await confirm({
-    message: 'Open VS Code in the current directory?',
-    default: true
-  })
+    message: "Open VS Code in the current directory?",
+    default: true,
+  });
 
   if (!shouldOpen) {
-    console.log(pc.dim('Skipping VS Code launch. You can open it manually later.'))
-    return
+    console.log(
+      pc.dim("Skipping VS Code launch. You can open it manually later."),
+    );
+    return;
   }
 
-  process.stdout.write(pc.cyan('Opening VS Code...'))
+  process.stdout.write(pc.cyan("Opening VS Code..."));
 
   try {
-    await exec('code .', { cwd: process.cwd() })
-    console.log(pc.green(' done'))
+    await exec("code .", { cwd: process.cwd() });
+    console.log(pc.green(" done"));
   } catch {
-    console.log(pc.yellow(' failed'))
-    console.log(pc.dim('   Could not open VS Code. Please open it manually in this directory.'))
+    console.log(pc.yellow(" failed"));
+    console.log(
+      pc.dim(
+        "   Could not open VS Code. Please open it manually in this directory.",
+      ),
+    );
   }
 }
 
-async function generateOpenClawConfigSnippet (config) {
-  process.stdout.write(pc.cyan('Generating OpenClaw MCP config snippet...'))
+async function generateOpenClawConfigSnippet(config) {
+  process.stdout.write(pc.cyan("Generating OpenClaw MCP config snippet..."));
 
-  const openclawDir = path.join(os.homedir(), '.openclaw')
-  await fs.mkdir(openclawDir, { recursive: true })
+  const openclawDir = path.join(os.homedir(), ".openclaw");
+  await fs.mkdir(openclawDir, { recursive: true });
 
   const env = {
     WDK_SEED: config.seed,
-    WDK_WALLET_ENCRYPTION_KEY: config.walletEncryptionKey
-  }
+    WDK_WALLET_ENCRYPTION_KEY: config.walletEncryptionKey,
+  };
 
   if (config.allowAgentMutations) {
-    env.WDK_ALLOW_AGENT_MUTATIONS = '1'
+    env.WDK_ALLOW_AGENT_MUTATIONS = "1";
   }
 
   if (config.indexerApiKey) {
-    env.WDK_INDEXER_API_KEY = config.indexerApiKey
+    env.WDK_INDEXER_API_KEY = config.indexerApiKey;
   }
 
   if (config.moonPayApiKey) {
-    env.MOONPAY_API_KEY = config.moonPayApiKey
-    env.MOONPAY_SECRET_KEY = config.moonPaySecretKey
+    env.MOONPAY_API_KEY = config.moonPayApiKey;
+    env.MOONPAY_SECRET_KEY = config.moonPaySecretKey;
   }
 
   const snippet = {
     tools: {
       mcpServers: {
         wdk: {
-          command: 'node',
-          args: [path.join(process.cwd(), 'examples/agent/index.js')],
-          env
-        }
-      }
-    }
+          command: "node",
+          args: [path.join(process.cwd(), "examples/agent/index.js")],
+          env,
+        },
+      },
+    },
+  };
+
+  const snippetPath = path.join(openclawDir, "wdk-mcp-toolkit.mcp.json5");
+  await fs.writeFile(snippetPath, JSON.stringify(snippet, null, 2) + "\n");
+
+  if (process.platform !== "win32") {
+    await fs.chmod(snippetPath, 0o600);
   }
 
-  const snippetPath = path.join(openclawDir, 'wdk-mcp-toolkit.mcp.json5')
-  await fs.writeFile(snippetPath, JSON.stringify(snippet, null, 2) + '\n')
-
-  if (process.platform !== 'win32') {
-    await fs.chmod(snippetPath, 0o600)
-  }
-
-  console.log(pc.green(' done'))
+  console.log(pc.green(" done"));
 
   return {
     snippetPath,
-    includePath: './wdk-mcp-toolkit.mcp.json5'
-  }
+    includePath: "./wdk-mcp-toolkit.mcp.json5",
+  };
 }
 
-function printSuccessMessage (config) {
+function printSuccessMessage(config) {
   const enabledCapabilities = [
-    'Wallet Operations (Ethereum, Arbitrum, Bitcoin)',
-    'Pricing Data',
-    'Token Swaps (Velora)',
-    'Cross-chain Bridge (USDT0)',
-    'DeFi Lending (Aave)'
-  ]
-  const disabledCapabilities = []
+    "Wallet Operations (Ethereum, Arbitrum, Bitcoin)",
+    "Pricing Data",
+    "Token Swaps (Velora)",
+    "Cross-chain Bridge (USDT0)",
+    "DeFi Lending (Aave)",
+  ];
+  const disabledCapabilities = [];
 
   if (config.indexerApiKey) {
-    enabledCapabilities.push('Transaction History')
+    enabledCapabilities.push("Transaction History");
   } else {
-    disabledCapabilities.push('Transaction History')
+    disabledCapabilities.push("Transaction History");
   }
 
   if (config.moonPayApiKey) {
-    enabledCapabilities.push('Fiat On/Off-Ramp (MoonPay)')
+    enabledCapabilities.push("Fiat On/Off-Ramp (MoonPay)");
   } else {
-    disabledCapabilities.push('Fiat On/Off-Ramp (MoonPay)')
+    disabledCapabilities.push("Fiat On/Off-Ramp (MoonPay)");
   }
 
-  console.log()
-  console.log(pc.green(pc.bold('╔══════════════════════════════════════════════════════════╗')))
-  console.log(pc.green(pc.bold('║                 Setup Complete!                          ║')))
-  console.log(pc.green(pc.bold('╚══════════════════════════════════════════════════════════╝')))
-  console.log()
-  console.log(pc.bold('Enabled capabilities:'))
-  enabledCapabilities.forEach(cap => {
-    console.log(pc.green(`  - ${cap}`))
-  })
+  console.log();
+  console.log(
+    pc.green(
+      pc.bold("╔══════════════════════════════════════════════════════════╗"),
+    ),
+  );
+  console.log(
+    pc.green(
+      pc.bold("║                 Setup Complete!                          ║"),
+    ),
+  );
+  console.log(
+    pc.green(
+      pc.bold("╚══════════════════════════════════════════════════════════╝"),
+    ),
+  );
+  console.log();
+  console.log(pc.bold("Enabled capabilities:"));
+  enabledCapabilities.forEach((cap) => {
+    console.log(pc.green(`  - ${cap}`));
+  });
 
   if (disabledCapabilities.length > 0) {
-    console.log()
-    console.log(pc.dim('Disabled capabilities (re-run setup to enable):'))
-    disabledCapabilities.forEach(cap => {
-      console.log(pc.dim(`  - ${cap}`))
-    })
+    console.log();
+    console.log(pc.dim("Disabled capabilities (re-run setup to enable):"));
+    disabledCapabilities.forEach((cap) => {
+      console.log(pc.dim(`  - ${cap}`));
+    });
   }
 
-  console.log()
-  console.log(pc.bold('Next steps:'))
-  console.log('  1. In VS Code, open ' + pc.cyan('.vscode/mcp.json'))
-  console.log('  2. Click the ' + pc.cyan('"Start"') + ' button above the server config')
-  console.log('  3. Open GitHub Copilot Chat and select ' + pc.cyan('"Agent"') + ' mode')
-  console.log('  4. Try: ' + pc.cyan('"What\'s my ethereum address?"'))
-  console.log()
-  console.log(pc.yellow(pc.bold('Remember: Never commit .vscode/mcp.json to git!')))
-  console.log()
+  console.log();
+  console.log(pc.bold("Next steps:"));
+  console.log("  1. In VS Code, open " + pc.cyan(".vscode/mcp.json"));
+  console.log(
+    "  2. Click the " + pc.cyan('"Start"') + " button above the server config",
+  );
+  console.log(
+    "  3. Open GitHub Copilot Chat and select " + pc.cyan('"Agent"') + " mode",
+  );
+  console.log("  4. Try: " + pc.cyan('"What\'s my ethereum address?"'));
+  console.log();
+  console.log(
+    pc.yellow(pc.bold("Remember: Never commit .vscode/mcp.json to git!")),
+  );
+  console.log();
 }
 
-function printOpenClawSuccessMessage (config, output) {
+function printOpenClawSuccessMessage(config, output) {
   const enabledCapabilities = [
-    'Wallet Operations (Ethereum, Arbitrum, Bitcoin)',
-    'Pricing Data',
-    'Token Swaps (Velora)',
-    'Cross-chain Bridge (USDT0)',
-    'DeFi Lending (Aave)',
-    'Custody Metadata',
-    'Governance (Policy + Goals)',
-    'Scheduler (OpenClaw cron)'
-  ]
+    "Wallet Operations (Ethereum, Arbitrum, Bitcoin)",
+    "Pricing Data",
+    "Token Swaps (Velora)",
+    "Cross-chain Bridge (USDT0)",
+    "DeFi Lending (Aave)",
+    "Custody Metadata",
+    "Governance (Policy + Goals)",
+    "Scheduler (OpenClaw cron)",
+  ];
 
   if (config.indexerApiKey) {
-    enabledCapabilities.push('Transaction History')
+    enabledCapabilities.push("Transaction History");
   }
 
   if (config.moonPayApiKey) {
-    enabledCapabilities.push('Fiat On/Off-Ramp (MoonPay)')
+    enabledCapabilities.push("Fiat On/Off-Ramp (MoonPay)");
   }
 
-  console.log()
-  console.log(pc.green(pc.bold('╔══════════════════════════════════════════════════════════╗')))
-  console.log(pc.green(pc.bold('║              OpenClaw Setup Complete!                    ║')))
-  console.log(pc.green(pc.bold('╚══════════════════════════════════════════════════════════╝')))
-  console.log()
-  console.log(pc.bold('Generated file:'))
-  console.log(pc.cyan(`  ${output.snippetPath}`))
-  console.log()
-  console.log(pc.bold('Enabled capabilities:'))
-  enabledCapabilities.forEach(cap => {
-    console.log(pc.green(`  - ${cap}`))
-  })
-  console.log()
-  console.log(pc.bold('Next steps:'))
-  console.log(`  1. Open ${pc.cyan('~/.openclaw/openclaw.json')}`)
-  console.log(`  2. Merge the generated snippet from ${pc.cyan(output.snippetPath)}`)
-  console.log('  3. Ensure OpenClaw can find the "node" binary in PATH')
-  console.log('  4. Run OpenClaw and verify the "wdk" MCP server is loaded')
-  console.log('  5. Set policy with setAgentPolicy before add/edit/remove cron tools')
-  console.log()
-  console.log(pc.yellow(pc.bold('Security reminder: Keep ~/.openclaw and ~/.wallets private and access-controlled.')))
-  console.log()
+  console.log();
+  console.log(
+    pc.green(
+      pc.bold("╔══════════════════════════════════════════════════════════╗"),
+    ),
+  );
+  console.log(
+    pc.green(
+      pc.bold("║              OpenClaw Setup Complete!                    ║"),
+    ),
+  );
+  console.log(
+    pc.green(
+      pc.bold("╚══════════════════════════════════════════════════════════╝"),
+    ),
+  );
+  console.log();
+  console.log(pc.bold("Generated file:"));
+  console.log(pc.cyan(`  ${output.snippetPath}`));
+  console.log();
+  console.log(pc.bold("Enabled capabilities:"));
+  enabledCapabilities.forEach((cap) => {
+    console.log(pc.green(`  - ${cap}`));
+  });
+  console.log();
+  console.log(pc.bold("Next steps:"));
+  console.log(`  1. Open ${pc.cyan("~/.openclaw/openclaw.json")}`);
+  console.log(
+    `  2. Merge the generated snippet from ${pc.cyan(output.snippetPath)}`,
+  );
+  console.log('  3. Ensure OpenClaw can find the "node" binary in PATH');
+  console.log('  4. Run OpenClaw and verify the "wdk" MCP server is loaded');
+  console.log(
+    "  5. Set policy with setAgentPolicy before add/edit/remove cron tools",
+  );
+  console.log();
+  console.log(
+    pc.yellow(
+      pc.bold(
+        "Security reminder: Keep ~/.openclaw and ~/.wallets private and access-controlled.",
+      ),
+    ),
+  );
+  console.log();
+}
 
-
-export { runSetupWizard, runOpenClawSetupWizard }
+export { runSetupWizard, runOpenClawSetupWizard };
