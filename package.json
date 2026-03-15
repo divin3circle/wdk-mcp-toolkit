@@ -25,7 +25,8 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
-    "setup": "node bin/index.js setup"
+    "setup": "node bin/index.js setup",
+    "setup:openclaw": "node bin/index.js setup:openclaw"
   },
   "bin": {
     "wdk-mcp-toolkit": "./bin/index.js"

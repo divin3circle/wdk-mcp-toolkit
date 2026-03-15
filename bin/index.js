@@ -12,72 +12,82 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-'use strict'
+"use strict";
 
-import pc from 'picocolors'
-import { createRequire } from 'node:module'
-const require = createRequire(import.meta.url)
-const pkg = require('../package.json')
+import pc from "picocolors";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 
 const COMMANDS = {
   setup: {
-    description: 'Configure WDK MCP server for VS Code GitHub Copilot',
+    description: "Configure WDK MCP server for VS Code GitHub Copilot",
     handler: async () => {
-      const { runSetupWizard } = await import('./setup.js')
-      await runSetupWizard()
-    }
+      const { runSetupWizard } = await import("./setup.js");
+      await runSetupWizard();
+    },
+  },
+  "setup:openclaw": {
+    description: "Generate OpenClaw MCP config snippet for Argo agent mode",
+    handler: async () => {
+      const { runOpenClawSetupWizard } = await import("./setup.js");
+      await runOpenClawSetupWizard();
+    },
   },
   help: {
-    description: 'Show this help message',
+    description: "Show this help message",
     handler: async () => {
-      printHelp()
-    }
+      printHelp();
+    },
   },
   version: {
-    description: 'Show the current version',
+    description: "Show the current version",
     handler: async () => {
-      console.log(pkg.version)
-    }
-  }
-}
+      console.log(pkg.version);
+    },
+  },
+};
 
-function printHelp () {
-  console.log()
-  console.log(pc.cyan(pc.bold('WDK MCP Toolkit')))
-  console.log()
-  console.log('Usage: wdk-mcp-toolkit <command>')
-  console.log()
-  console.log('Commands:')
+function printHelp() {
+  console.log();
+  console.log(pc.cyan(pc.bold("WDK MCP Toolkit")));
+  console.log();
+  console.log("Usage: wdk-mcp-toolkit <command>");
+  console.log();
+  console.log("Commands:");
   for (const [name, cmd] of Object.entries(COMMANDS)) {
-    console.log(`  ${pc.green(name.padEnd(12))} ${cmd.description}`)
+    console.log(`  ${pc.green(name.padEnd(12))} ${cmd.description}`);
   }
-  console.log()
-  console.log('Examples:')
-  console.log(`  ${pc.dim('$')} wdk-mcp-toolkit setup`)
-  console.log()
+  console.log();
+  console.log("Examples:");
+  console.log(`  ${pc.dim("$")} wdk-mcp-toolkit setup`);
+  console.log(`  ${pc.dim("$")} wdk-mcp-toolkit setup:openclaw`);
+  console.log();
 }
 
-async function main () {
-  const args = process.argv.slice(2)
-  const command = args[0]
+async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0];
 
   if (!command) {
-    printHelp()
-    process.exit(0)
+    printHelp();
+    process.exit(0);
   }
 
-  const cmd = COMMANDS[command]
+  const cmd = COMMANDS[command];
   if (!cmd) {
-    console.error(pc.red(`Unknown command: ${command}`))
-    console.error()
-    console.error(`Run ${pc.cyan('wdk-mcp-toolkit help')} for available commands.`)
-    process.exit(1)
+    console.error(pc.red(`Unknown command: ${command}`));
+    console.error();
+    console.error(
+      `Run ${pc.cyan("wdk-mcp-toolkit help")} for available commands.`,
+    );
+    process.exit(1);
   }
 
-  await cmd.handler()
+  await cmd.handler();
 }
 
 main().catch((error) => {
-  console.error(pc.red('Error:'), error.message)
-  process.exit(1)
-})
+  console.error(pc.red("Error:"), error.message);
+  process.exit(1);
+});

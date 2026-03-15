@@ -17,6 +17,7 @@ import { password, input, confirm, checkbox } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import { exec as execCallback } from 'node:child_process'
 import { promisify } from 'node:util'
 
@@ -102,6 +103,27 @@ async function runSetupWizard () {
   printSuccessMessage(config)
 }
 
+async function runOpenClawSetupWizard () {
+  printOpenClawBanner()
+
+  const config = {}
+
+  config.seed = await collectSeedPhrase()
+  config.walletEncryptionKey = await collectWalletEncryptionKey()
+  config.allowAgentMutations = await collectAgentMutationConsent()
+  config.indexerApiKey = await collectIndexerApiKey()
+
+  const moonpay = await collectMoonPayCredentials()
+  config.moonPayApiKey = moonpay.apiKey
+  config.moonPaySecretKey = moonpay.secretKey
+
+  await selectAndInstallDependencies()
+
+  const output = await generateOpenClawConfigSnippet(config)
+
+  printOpenClawSuccessMessage(config, output)
+}
+
 function printBanner () {
   console.log()
   console.log(pc.cyan(pc.bold('╔══════════════════════════════════════════════════════════╗')))
@@ -109,6 +131,16 @@ function printBanner () {
   console.log(pc.cyan(pc.bold('╚══════════════════════════════════════════════════════════╝')))
   console.log()
   console.log('This wizard configures the WDK MCP server for VS Code GitHub Copilot.')
+  console.log()
+}
+
+function printOpenClawBanner () {
+  console.log()
+  console.log(pc.cyan(pc.bold('╔══════════════════════════════════════════════════════════╗')))
+  console.log(pc.cyan(pc.bold('║         WDK MCP Toolkit OpenClaw Setup Wizard            ║')))
+  console.log(pc.cyan(pc.bold('╚══════════════════════════════════════════════════════════╝')))
+  console.log()
+  console.log('This wizard generates an OpenClaw MCP config snippet for Argo autonomous mode.')
   console.log()
 }
 
@@ -190,6 +222,51 @@ async function collectIndexerApiKey () {
 
   console.log()
   return apiKey.trim()
+}
+
+async function collectWalletEncryptionKey () {
+  console.log(pc.yellow(pc.bold('WALLET ENCRYPTION KEY (Required for custody tools)')))
+  console.log(pc.dim('──────────────────────────────────────────────────────────'))
+  console.log()
+  console.log('Used to encrypt wallet secret material at rest in ~/.wallets/wallets.json.')
+  console.log(pc.dim('Use a long random value. Example: openssl rand -base64 32'))
+  console.log()
+
+  const key = await password({
+    message: 'WDK wallet encryption key:',
+    mask: '*',
+    validate: (value) => {
+      if (!value || value.trim() === '') {
+        return 'Encryption key is required'
+      }
+
+      if (value.trim().length < 16) {
+        return 'Encryption key should be at least 16 characters'
+      }
+
+      return true
+    }
+  })
+
+  console.log()
+  return key.trim()
+}
+
+async function collectAgentMutationConsent () {
+  console.log(pc.yellow(pc.bold('AGENT MUTATIONS')))
+  console.log(pc.dim('──────────────────────────────────────────────────────────'))
+  console.log()
+  console.log('Enabling this sets WDK_ALLOW_AGENT_MUTATIONS=1 in the OpenClaw MCP server env.')
+  console.log('When enabled, agent-initiated custody and scheduler writes are allowed.')
+  console.log()
+
+  const enabled = await confirm({
+    message: 'Enable agent-initiated wallet/scheduler mutations?',
+    default: true
+  })
+
+  console.log()
+  return enabled
 }
 
 async function collectMoonPayCredentials () {
@@ -337,6 +414,57 @@ async function openVsCode () {
   }
 }
 
+async function generateOpenClawConfigSnippet (config) {
+  process.stdout.write(pc.cyan('Generating OpenClaw MCP config snippet...'))
+
+  const openclawDir = path.join(os.homedir(), '.openclaw')
+  await fs.mkdir(openclawDir, { recursive: true })
+
+  const env = {
+    WDK_SEED: config.seed,
+    WDK_WALLET_ENCRYPTION_KEY: config.walletEncryptionKey
+  }
+
+  if (config.allowAgentMutations) {
+    env.WDK_ALLOW_AGENT_MUTATIONS = '1'
+  }
+
+  if (config.indexerApiKey) {
+    env.WDK_INDEXER_API_KEY = config.indexerApiKey
+  }
+
+  if (config.moonPayApiKey) {
+    env.MOONPAY_API_KEY = config.moonPayApiKey
+    env.MOONPAY_SECRET_KEY = config.moonPaySecretKey
+  }
+
+  const snippet = {
+    tools: {
+      mcpServers: {
+        wdk: {
+          command: 'node',
+          args: [path.join(process.cwd(), 'examples/agent/index.js')],
+          env
+        }
+      }
+    }
+  }
+
+  const snippetPath = path.join(openclawDir, 'wdk-mcp-toolkit.mcp.json5')
+  await fs.writeFile(snippetPath, JSON.stringify(snippet, null, 2) + '\n')
+
+  if (process.platform !== 'win32') {
+    await fs.chmod(snippetPath, 0o600)
+  }
+
+  console.log(pc.green(' done'))
+
+  return {
+    snippetPath,
+    includePath: './wdk-mcp-toolkit.mcp.json5'
+  }
+}
+
 function printSuccessMessage (config) {
   const enabledCapabilities = [
     'Wallet Operations (Ethereum, Arbitrum, Bitcoin)',
@@ -388,4 +516,48 @@ function printSuccessMessage (config) {
   console.log()
 }
 
-export { runSetupWizard }
+function printOpenClawSuccessMessage (config, output) {
+  const enabledCapabilities = [
+    'Wallet Operations (Ethereum, Arbitrum, Bitcoin)',
+    'Pricing Data',
+    'Token Swaps (Velora)',
+    'Cross-chain Bridge (USDT0)',
+    'DeFi Lending (Aave)',
+    'Custody Metadata',
+    'Governance (Policy + Goals)',
+    'Scheduler (OpenClaw cron)'
+  ]
+
+  if (config.indexerApiKey) {
+    enabledCapabilities.push('Transaction History')
+  }
+
+  if (config.moonPayApiKey) {
+    enabledCapabilities.push('Fiat On/Off-Ramp (MoonPay)')
+  }
+
+  console.log()
+  console.log(pc.green(pc.bold('╔══════════════════════════════════════════════════════════╗')))
+  console.log(pc.green(pc.bold('║              OpenClaw Setup Complete!                    ║')))
+  console.log(pc.green(pc.bold('╚══════════════════════════════════════════════════════════╝')))
+  console.log()
+  console.log(pc.bold('Generated file:'))
+  console.log(pc.cyan(`  ${output.snippetPath}`))
+  console.log()
+  console.log(pc.bold('Enabled capabilities:'))
+  enabledCapabilities.forEach(cap => {
+    console.log(pc.green(`  - ${cap}`))
+  })
+  console.log()
+  console.log(pc.bold('Next steps:'))
+  console.log(`  1. Open ${pc.cyan('~/.openclaw/openclaw.json')}`)
+  console.log(`  2. Merge the generated snippet from ${pc.cyan(output.snippetPath)}`)
+  console.log('  3. Ensure OpenClaw can find the "node" binary in PATH')
+  console.log('  4. Run OpenClaw and verify the "wdk" MCP server is loaded')
+  console.log('  5. Set policy with setAgentPolicy before add/edit/remove cron tools')
+  console.log()
+  console.log(pc.yellow(pc.bold('Security reminder: Keep ~/.openclaw and ~/.wallets private and access-controlled.')))
+  console.log()
+
+
+export { runSetupWizard, runOpenClawSetupWizard }

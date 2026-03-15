@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-'use strict'
+"use strict";
 
 /** @typedef {import('./src/server.js').TokenInfo} TokenInfo */
 
@@ -26,7 +26,7 @@
 
 /** @typedef {import('./src/server.js').ToolFunction} ToolFunction */
 
-export { WdkMcpServer, CHAINS, DEFAULT_TOKENS } from './src/server.js'
+export { WdkMcpServer, CHAINS, DEFAULT_TOKENS } from "./src/server.js";
 
 export {
   WALLET_TOOLS,
@@ -42,36 +42,36 @@ export {
   sendTransaction,
   transfer,
   sign,
-  verify
-} from './src/tools/wallet/index.js'
+  verify,
+} from "./src/tools/wallet/index.js";
 
 export {
   PRICING_TOOLS,
   getCurrentPrice,
-  getHistoricalPrice
-} from './src/tools/pricing/index.js'
+  getHistoricalPrice,
+} from "./src/tools/pricing/index.js";
 
 export {
   INDEXER_TOOLS,
   getTokenTransfers,
-  getIndexerTokenBalance
-} from './src/tools/indexer/index.js'
+  getIndexerTokenBalance,
+} from "./src/tools/indexer/index.js";
 
 export {
   SWAP_TOOLS,
   SWAP_READ_TOOLS,
   SWAP_WRITE_TOOLS,
   quoteSwap,
-  swap
-} from './src/tools/swap/index.js'
+  swap,
+} from "./src/tools/swap/index.js";
 
 export {
   BRIDGE_TOOLS,
   BRIDGE_READ_TOOLS,
   BRIDGE_WRITE_TOOLS,
   quoteBridge,
-  bridge
-} from './src/tools/bridge/index.js'
+  bridge,
+} from "./src/tools/bridge/index.js";
 
 export {
   LENDING_TOOLS,
@@ -84,8 +84,8 @@ export {
   quoteBorrow,
   borrow,
   quoteRepay,
-  repay
-} from './src/tools/lending/index.js'
+  repay,
+} from "./src/tools/lending/index.js";
 
 export {
   FIAT_TOOLS,
@@ -98,12 +98,38 @@ export {
   getTransactionDetail,
   getSupportedCryptoAssets,
   getSupportedFiatCurrencies,
-  getSupportedCountries
-} from './src/tools/fiat/index.js'
+  getSupportedCountries,
+} from "./src/tools/fiat/index.js";
+
+export {
+  CUSTODY_TOOLS,
+  createWalletConfig,
+  getWalletConfig,
+  listWalletConfigs,
+} from "./src/tools/custody/index.js";
+
+export {
+  GOVERNANCE_TOOLS,
+  setAgentPolicy,
+  upsertGoal,
+  listGoals,
+  analyzeGoalAgainstPolicy,
+} from "./src/tools/governance/index.js";
+
+export {
+  SCHEDULER_TOOLS,
+  createCronJob,
+  updateCronJob,
+  deleteCronJob,
+  listCronJobs,
+  addCronJob,
+  editCronJob,
+  removeCronJob,
+} from "./src/tools/scheduler/index.js";
 
 export {
   parseAmountToBaseUnits,
   formatBaseUnitsToAmount,
   AmountParseError,
-  AMOUNT_ERROR_CODES
-} from './src/utils/index.js'
+  AMOUNT_ERROR_CODES,
+} from "./src/utils/index.js";
